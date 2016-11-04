@@ -24,6 +24,9 @@ type specific_operation =
   | Imultaddf of bool                   (* multiply, optionally negate, and add *)
   | Imultsubf of bool                   (* multiply, optionally negate, and subtract *)
 
+let spacetime_node_hole_pointer_is_live_before = function
+  | Imultaddf _ | Imultsubf _ -> false
+
 (* Addressing modes *)
 
 type addressing_mode =
@@ -55,7 +58,7 @@ let offset_addressing addr delta =
   | Iindexed n -> Iindexed(n + delta)
 
 let num_args_addressing = function
-  | Iindexed n -> 1
+  | Iindexed _ -> 1
 
 (* Printing operations and addressing modes *)
 

@@ -64,7 +64,7 @@ let num_register_classes = 2
 
 let register_class r =
   match r.typ with
-  | Int | Addr -> 0
+  | Val | Int | Addr -> 0
   | Float -> 1
 
 let num_available_registers = [| 21; 32 |]
@@ -111,7 +111,7 @@ let calling_conventions
   let ofs = ref 0 in
   for i = 0 to Array.length arg - 1 do
     match arg.(i).typ with
-    | Int | Addr as ty ->
+    | Val | Int | Addr as ty ->
         if !int <= last_int then begin
           loc.(i) <- phys_reg !int;
           incr int
@@ -132,7 +132,11 @@ let calling_conventions
 
 let incoming ofs = Incoming ofs
 let outgoing ofs = Outgoing ofs
-let not_supported ofs = fatal_error "Proc.loc_results: cannot call"
+let not_supported _ = fatal_error "Proc.loc_results: cannot call"
+
+let max_arguments_for_tailcalls = 8 (* CHECK *)
+
+let loc_spacetime_node_hole = Reg.dummy  (* Spacetime unsupported *)
 
 (* OCaml calling convention:
      first integer args in a0 .. a7, s2 .. s9
@@ -143,9 +147,9 @@ let not_supported ofs = fatal_error "Proc.loc_results: cannot call"
 let loc_arguments arg =
   calling_conventions 0 15 110 125 outgoing arg
 let loc_parameters arg =
-  let (loc, ofs) = calling_conventions 0 15 110 125 incoming arg in loc
+  let (loc, _) = calling_conventions 0 15 110 125 incoming arg in loc
 let loc_results res =
-  let (loc, ofs) = calling_conventions 0 15 110 125 not_supported res in loc
+  let (loc, _) = calling_conventions 0 15 110 125 not_supported res in loc
 
 (* C calling convention:
      first integer args in a0 .. a7
@@ -154,7 +158,11 @@ let loc_results res =
    Return values in a0 .. a1 or fa0 .. fa1. *)
 
 let loc_external_arguments arg =
-  calling_conventions 0 7 110 117 outgoing arg
+  let arg =
+    Array.map (fun regs -> assert (Array.length regs = 1); regs.(0)) arg
+  in
+  let (loc, alignment) = calling_conventions 0 7 110 117 outgoing arg in
+  Array.map (fun reg -> [|reg|]) loc, alignment
 let loc_external_results res =
   let (loc, _) = calling_conventions 0 1 110 111 not_supported res in loc
 
@@ -164,7 +172,7 @@ let loc_exn_bucket = phys_reg 0
 
 (* Volatile registers: none *)
 
-let regs_are_volatile rs = false
+let regs_are_volatile _ = false
 
 (* Registers destroyed by operations *)
 
@@ -175,8 +183,8 @@ let destroyed_at_c_call =
      117; 128; 129; 130; 131])
 
 let destroyed_at_oper = function
-  | Iop(Icall_ind | Icall_imm _ | Iextcall(_, true)) -> all_phys_regs
-  | Iop(Iextcall(_, false)) -> destroyed_at_c_call
+  | Iop(Icall_ind _ | Icall_imm _ | Iextcall{alloc = true; _}) -> all_phys_regs
+  | Iop(Iextcall{alloc = false; _}) -> destroyed_at_c_call
   | _ -> [||]
 
 let destroyed_at_raise = all_phys_regs
@@ -184,20 +192,20 @@ let destroyed_at_raise = all_phys_regs
 (* Maximal register pressure *)
 
 let safe_register_pressure = function
-  | Iextcall(_, _) -> 15
+  | Iextcall _ -> 15
   | _ -> 21
 
 let max_register_pressure = function
-  | Iextcall(_, _) -> [| 15; 18 |]
+  | Iextcall _ -> [| 15; 18 |]
   | _ -> [| 21; 30 |]
 
 (* Pure operations (without any side effect besides updating their result
    registers). *)
 
 let op_is_pure = function
-  | Icall_ind | Icall_imm _ | Itailcall_ind | Itailcall_imm _
+  | Icall_ind _ | Icall_imm _ | Itailcall_ind _ | Itailcall_imm _
   | Iextcall _ | Istackoffset _ | Istore _ | Ialloc _
-  | Iintop(Icheckbound) | Iintop_imm(Icheckbound, _) -> false
+  | Iintop(Icheckbound _) | Iintop_imm(Icheckbound _, _) -> false
   | Ispecific(Imultaddf _ | Imultsubf _) -> true
   | _ -> true
 

@@ -24,15 +24,15 @@ inherit Selectgen.selector_generic as super
 
 method is_immediate n = (n <= 0x7FF) && (n >= -0x800)
 
-method select_addressing chunk = function
-  | Cop(Cadda, [arg; Cconst_int n]) when self#is_immediate n ->
+method select_addressing _ = function
+  | Cop(Cadda, [arg; Cconst_int n], _dbg) when self#is_immediate n ->
       (Iindexed n, arg)
-  | Cop(Cadda, [arg1; Cop(Caddi, [arg2; Cconst_int n])]) when self#is_immediate n ->
-      (Iindexed n, Cop(Caddi, [arg1; arg2]))
+  | Cop(Cadda, [arg1; Cop(Caddi, [arg2; Cconst_int n], _dbg)], dbg) when self#is_immediate n ->
+      (Iindexed n, Cop(Caddi, [arg1; arg2], dbg))
   | arg ->
       (Iindexed 0, arg)
 
-method! select_operation op args =
+method! select_operation op args dbg =
   match (op, args) with
   (* RISC-V does not support immediate operands for multiply high *)
   | (Cmulhi, _) -> (Iintop Imulh, args)
@@ -42,20 +42,20 @@ method! select_operation op args =
   | (Cor, _) -> self#select_logical Ior args
   | (Cxor, _) -> self#select_logical Ixor args
   (* Recognize (neg-)mult-add and (neg-)mult-sub instructions *)
-  | (Caddf, [Cop(Cmulf, [arg1; arg2]); arg3])
-  | (Caddf, [arg3; Cop(Cmulf, [arg1; arg2])]) ->
+  | (Caddf, [Cop(Cmulf, [arg1; arg2], _dbg); arg3])
+  | (Caddf, [arg3; Cop(Cmulf, [arg1; arg2], _dbg)]) ->
       (Ispecific (Imultaddf false), [arg1; arg2; arg3])
-  | (Csubf, [Cop(Cmulf, [arg1; arg2]); arg3]) ->
+  | (Csubf, [Cop(Cmulf, [arg1; arg2], _dbg); arg3]) ->
       (Ispecific (Imultsubf false), [arg1; arg2; arg3])
-  | (Cnegf, [Cop(Csubf, [Cop(Cmulf, [arg1; arg2]); arg3])]) ->
+  | (Cnegf, [Cop(Csubf, [Cop(Cmulf, [arg1; arg2], _dbg); arg3], __dbg)]) ->
       (Ispecific (Imultsubf true), [arg1; arg2; arg3])
-  | (Cnegf, [Cop(Caddf, [Cop(Cmulf, [arg1; arg2]); arg3])]) ->
+  | (Cnegf, [Cop(Caddf, [Cop(Cmulf, [arg1; arg2], _dbg); arg3], __dbg)]) ->
       (Ispecific (Imultaddf true), [arg1; arg2; arg3])
   (* RISC-V does not support immediate operands for comparison operators *)
   | (Ccmpi comp, args) -> (Iintop(Icomp (Isigned comp)), args)
   | (Ccmpa comp, args) -> (Iintop(Icomp (Iunsigned comp)), args)
   | _ ->
-      super#select_operation op args
+      super#select_operation op args dbg
 
 method select_logical op = function
   | [arg; Cconst_int n] when n >= 0 && n <= 0xFFF ->
@@ -67,14 +67,14 @@ method select_logical op = function
 
 (* Instruction selection for conditionals *)
 
-method select_condition = function
-  | Cop(Ccmpi cmp, args) ->
+method! select_condition = function
+  | Cop(Ccmpi cmp, args, _dbg) ->
       (Iinttest(Isigned cmp), Ctuple args)
-  | Cop(Ccmpa cmp, args) ->
+  | Cop(Ccmpa cmp, args, _dbg) ->
       (Iinttest(Iunsigned cmp), Ctuple args)
-  | Cop(Ccmpf cmp, args) ->
+  | Cop(Ccmpf cmp, args, _dbg) ->
       (Ifloattest(cmp, false), Ctuple args)
-  | Cop(Cand, [arg; Cconst_int 1]) ->
+  | Cop(Cand, [arg; Cconst_int 1], _dbg) ->
       (Ioddtest, arg)
   | arg ->
       (Itruetest, arg)
