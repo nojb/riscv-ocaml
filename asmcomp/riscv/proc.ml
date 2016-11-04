@@ -105,6 +105,75 @@ let stack_slot slot ty =
 
 let calling_conventions
     first_int last_int first_float last_float make_stack arg =
+  let loc = Array.make (Array.length arg) Reg.dummy in
+  let int = ref first_int in
+  let float = ref first_float in
+  let ofs = ref 0 in
+  for i = 0 to Array.length arg - 1 do
+    match arg.(i).typ with
+    | Val | Int | Addr as ty ->
+        if !int <= last_int then begin
+          loc.(i) <- phys_reg !int;
+          incr int
+        end else begin
+          loc.(i) <- stack_slot (make_stack !ofs) ty;
+          ofs := !ofs + size_int
+        end
+    | Float ->
+        if !float <= last_float then begin
+          loc.(i) <- phys_reg !float;
+          incr float
+        end else begin
+          loc.(i) <- stack_slot (make_stack !ofs) Float;
+          ofs := !ofs + size_float
+        end
+  done;
+  (loc, Misc.align !ofs 16) (* Keep stack 16-aligned. *)
+
+let incoming ofs = Incoming ofs
+let outgoing ofs = Outgoing ofs
+let not_supported _ = fatal_error "Proc.loc_results: cannot call"
+
+let max_arguments_for_tailcalls = 16
+
+let loc_spacetime_node_hole = Reg.dummy  (* Spacetime unsupported *)
+
+(* OCaml calling convention:
+     first integer args in a0 .. a7, s2 .. s9
+     first float args in fa0 .. fa7, fs2 .. fs9
+     remaining args on stack.
+   Return values in a0 .. a7, s2 .. s9 or fa0 .. fa7, fs2 .. fs9. *)
+
+let single_regs arg = Array.map (fun arg -> [| arg |]) arg
+let ensure_single_regs res =
+  Array.map (function
+      | [| res |] -> res
+      | _ -> failwith "proc.ensure_single_regs"
+    ) res
+
+let loc_arguments arg =
+  calling_conventions 0 15 110 125 outgoing arg
+
+let loc_parameters arg =
+  let (loc, _ofs) =
+    calling_conventions 0 15 110 125 incoming arg
+  in
+  loc
+
+let loc_results res =
+  let (loc, _ofs) =
+    calling_conventions 0 15 110 125 not_supported res
+  in
+  loc
+
+(* C calling convention:
+     first integer args in a0 .. a7
+     first float args in fa0 .. fa7
+     remaining args on stack.
+   Return values in a0 .. a1 or fa0 .. fa1. *)
+
+let external_calling_conventions
+    first_int last_int first_float last_float make_stack arg =
   let loc = Array.make (Array.length arg) [| Reg.dummy |] in
   let int = ref first_int in
   let float = ref first_float in
@@ -116,7 +185,8 @@ let calling_conventions
         | Val | Int | Addr as ty ->
             if !int <= last_int then begin
               loc.(i) <- [| phys_reg !int |];
-              incr int
+              incr int;
+              incr float;
             end else begin
               loc.(i) <- [| stack_slot (make_stack !ofs) ty |];
               ofs := !ofs + size_int
@@ -124,7 +194,8 @@ let calling_conventions
         | Float ->
             if !float <= last_float then begin
               loc.(i) <- [| phys_reg !float |];
-              incr float
+              incr float;
+              incr int;
             end else begin
               loc.(i) <- [| stack_slot (make_stack !ofs) Float |];
               ofs := !ofs + size_float
@@ -164,60 +235,12 @@ let calling_conventions
   done;
   (loc, Misc.align !ofs 16) (* Keep stack 16-aligned. *)
 
-let incoming ofs = Incoming ofs
-let outgoing ofs = Outgoing ofs
-let not_supported _ = fatal_error "Proc.loc_results: cannot call"
-
-let max_arguments_for_tailcalls = 8 (* CHECK *)
-
-let loc_spacetime_node_hole = Reg.dummy  (* Spacetime unsupported *)
-
-(* OCaml calling convention:
-     first integer args in a0 .. a7, s2 .. s9
-     first float args in fa0 .. fa7, fs2 .. fs9
-     remaining args on stack.
-   Return values in a0 .. a7, s2 .. s9 or fa0 .. fa7, fs2 .. fs9. *)
-
-let single_regs arg = Array.map (fun arg -> [| arg |]) arg
-let ensure_single_regs res =
-  Array.map (function
-      | [| res |] -> res
-      | _ -> failwith "proc.ensure_single_regs"
-    ) res
-
-let loc_arguments arg =
-  let loc, ofs =
-    calling_conventions 0 15 110 125 outgoing (single_regs arg)
-  in
-  ensure_single_regs loc, ofs
-
-let loc_parameters arg =
-  let (loc, _ofs) =
-    calling_conventions 0 15 110 125 incoming (single_regs arg)
-  in
-  ensure_single_regs loc
-
-let loc_results res =
-  let (loc, _ofs) =
-    calling_conventions 0 15 110 125 not_supported (single_regs res)
-  in
-  ensure_single_regs loc
-
-(* C calling convention:
-     first integer args in a0 .. a7
-     first float args in fa0 .. fa7
-     remaining args on stack.
-   Return values in a0 .. a1 or fa0 .. fa1. *)
-
 let loc_external_arguments arg =
-  let (loc, alignment) =
-    calling_conventions 0 7 110 117 outgoing arg
-  in
-  loc, alignment
+  external_calling_conventions 0 7 110 117 outgoing arg
 
 let loc_external_results res =
   let (loc, _ofs) =
-    calling_conventions 0 1 110 111 not_supported (single_regs res)
+    external_calling_conventions 0 1 110 111 not_supported (single_regs res)
   in
   ensure_single_regs loc
 
