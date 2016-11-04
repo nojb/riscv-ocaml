@@ -297,12 +297,12 @@ caml_start_program:
 	fsd	fs11, 0xb8(sp)
 	addi	sp, sp, -32
         /* Setup a callback link on the stack */
-	LOADGLOBAL(a0, caml_bottom_of_stack)
-	store	a0, 0(sp)
-	LOADGLOBAL(a1, caml_last_return_address)
-	store	a1, 8(sp)
-	LOADGLOBAL(a2, caml_gc_regs)
-	store	a2, 16(sp)
+	LOADGLOBAL(TMP1, caml_bottom_of_stack)
+	store	TMP1, 0(sp)
+	LOADGLOBAL(TMP1, caml_last_return_address)
+	store	TMP1, 8(sp)
+	LOADGLOBAL(TMP1, caml_gc_regs)
+	store	TMP1, 16(sp)
 	/* set up a trap frame */
 	addi	sp, sp, -16
 	LOADGLOBAL(TMP1, caml_exception_pointer)
