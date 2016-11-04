@@ -159,8 +159,8 @@ caml_call_gc:
         fld	ft10, 0x150(sp)
         fld	ft11, 0x158(sp)
         /* Reload new allocation pointer and allocation limit */
-        LOADGLOBAL(ALLOC_PTR, caml_young_ptr)
-        LOADGLOBAL(ALLOC_LIMIT, caml_young_limit)
+        load	ALLOC_PTR, caml_young_ptr
+        load	ALLOC_LIMIT, caml_young_limit
         /* Free stack space and return to caller */
         load	ra, 0x8(sp)
         load	s0, 0x0(sp)
@@ -198,7 +198,7 @@ caml_c_call:
 	.type	caml_raise_exn, @function
 caml_raise_exn:
         /* Test if backtrace is active */
-        LOADGLOBAL(TMP1, caml_backtrace_active)
+        load	TMP1, caml_backtrace_active
         bnez	TMP1, 2f
 1:      /* Cut stack at current trap handler */
         mv	sp, TRAP_PTR
@@ -228,10 +228,10 @@ caml_raise_exn:
 	.globl	caml_raise_exception
 	.type	caml_raise_exception, @function
 caml_raise_exception:
-	LOADGLOBAL(TRAP_PTR, caml_exception_pointer)
-        LOADGLOBAL(ALLOC_PTR, caml_young_ptr)
-        LOADGLOBAL(ALLOC_LIMIT, caml_young_limit)
-        LOADGLOBAL(TMP1, caml_backtrace_active)
+	load	TRAP_PTR, caml_exception_pointer
+        load	ALLOC_PTR, caml_young_ptr
+        load	ALLOC_LIMIT, caml_young_limit
+        load	TMP1, caml_backtrace_active
         bnez	TMP1, 2f
 1:      /* Cut stack at current trap handler */
         mv	sp, TRAP_PTR
@@ -241,8 +241,8 @@ caml_raise_exception:
         jr	TMP1
 2:      /* Preserve exception bucket in callee-save register s2 */
         mv	s2, a0
-        LOADGLOBAL(a1, caml_last_return_address)
-        LOADGLOBAL(a2, caml_bottom_of_stack)
+        load	a1, caml_last_return_address
+        load	a2, caml_bottom_of_stack
         mv	a3, TRAP_PTR
         call	caml_stash_backtrace
         mv	a0, s2
