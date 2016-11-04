@@ -275,8 +275,8 @@ let emit_instr i =
       end else begin
         let lbl = new_label() in
         float_literals := (f, lbl) :: !float_literals;
-        `	auipc	{emit_reg reg_tmp1}, %pcrel_hi({emit_label lbl})\n`;
-        `	fld	{emit_reg i.res.(0)}, %lo({emit_label lbl})({emit_reg reg_tmp1})\n`
+        `1:	auipc	{emit_reg reg_tmp1}, %pcrel_hi({emit_label lbl})\n`;
+        `	fld	{emit_reg i.res.(0)}, %prel_lo(1b)({emit_reg reg_tmp1})\n`
       end
   | Lop(Iconst_symbol s) ->
       `	la	{emit_reg i.res.(0)}, {emit_symbol s}\n`
@@ -599,7 +599,7 @@ let emit_item = function
   | Cskip n ->
       if n > 0 then `	.space	{emit_int n}\n`
   | Calign n ->
-      `	.align	{emit_int (Misc.log2 n)}\n`
+      `	.align	{emit_int (Misc.log2 n)}\n` (* CHECK n <--> 2^n *)
 
 let data l =
   `	{emit_string data_space}\n`;
