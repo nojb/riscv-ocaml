@@ -244,8 +244,8 @@ caml_raise_exception:
         bnez	TMP1, 2f
 1:      /* Cut stack at current trap handler */
         mv	sp, TRAP_PTR
-        LOAD	TMP1, 8(sp)
-        LOAD	TRAP_PTR, 0(sp)
+        load	TMP1, 8(sp)
+        load	TRAP_PTR, 0(sp)
         addi	sp, sp, 16
         jr	TMP1
 2:      /* Preserve exception bucket in callee-save register s2 */
@@ -272,7 +272,7 @@ caml_start_program:
 .Ljump_to_caml:
 	/* Set up stack frame and save callee-save registers */
 	addi	sp, sp, -0xd0
-	STORE	ra, 0xc0(sp)
+	store	ra, 0xc0(sp)
 	store	s0, 0x0(sp)
 	store	s1, 0x8(sp)
 	store	s2, 0x10(sp)
