@@ -449,12 +449,14 @@ let emit_instr i =
       | Iinttest_imm _ ->
           fatal_error "Emit.emit_instr (Iinttest_imm _)"
       | Ifloattest(cmp, neg) -> (* FIXME NaNs *)
-          let (comp, neg) = match cmp with
-            | Ceq -> ("eq", neg) | Cne -> ("eq", not neg)
-            | Clt  -> ("lt", neg) | Cgt -> ("lt", not neg)
-            | Cle -> ("le", neg) | Cge -> ("le", not neg)
+          let neg = match cmp with
+            | Ceq -> `	feq.d	{emit_reg reg_tmp1}, {emit_reg i.arg.(0)}, {emit_reg i.arg.(1)}\n`; neg
+            | Cne -> `	feq.d	{emit_reg reg_tmp1}, {emit_reg i.arg.(0)}, {emit_reg i.arg.(1)}\n`; not neg
+            | Clt -> `	flt.d	{emit_reg reg_tmp1}, {emit_reg i.arg.(0)}, {emit_reg i.arg.(1)}\n`; neg
+            | Cgt -> `	flt.d	{emit_reg reg_tmp1}, {emit_reg i.arg.(1)}, {emit_reg i.arg.(0)}\n`; neg
+            | Cle -> `	fle.d	{emit_reg reg_tmp1}, {emit_reg i.arg.(0)}, {emit_reg i.arg.(1)}\n`; neg
+            | Cge -> `	fle.d	{emit_reg reg_tmp1}, {emit_reg i.arg.(1)}, {emit_reg i.arg.(0)}\n`; neg
           in
-          `	f{emit_string comp}.d	{emit_reg reg_tmp1}, {emit_reg i.arg.(0)}, {emit_reg i.arg.(1)}\n`;
           if neg then
             `	beqz	{emit_reg reg_tmp1}, {emit_label lbl}\n`
           else
