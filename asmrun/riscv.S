@@ -193,8 +193,7 @@ caml_c_call:
         mv	s2, ra
         /* Record lowest stack address and return address */
         STOREGLOBAL(ra, caml_last_return_address, TMP0)
-        mv	TMP1, sp
-        STOREGLOBAL(TMP1, caml_bottom_of_stack, TMP0)
+        STOREGLOBAL(sp, caml_bottom_of_stack, TMP0)
         /* Make the exception handler alloc ptr available to the C code */
         STOREGLOBAL(ALLOC_PTR, caml_young_ptr, TMP0)
         STOREGLOBAL(TRAP_PTR, caml_exception_pointer, TMP0)
