@@ -559,14 +559,14 @@ if test "$?" -eq 0; then
 else
   # For cross-compilation, runtest always fails: add special handling.
   case "$target" in
-    i686-*-mingw*) inf "OK, this is a regular 32 bit architecture."
-                   echo "#undef ARCH_SIXTYFOUR" >> m.h
-                   set 4 4 4 2 8
-                   arch64=false;;
-    x86_64-*-mingw*) inf "Wow! A 64 bit architecture!"
-                     echo "#define ARCH_SIXTYFOUR" >> m.h
-                     set 4 4 8 2 8
-                     arch64=true;;
+    i686-*-mingw*|riscv32-*-*) inf "OK, this is a regular 32 bit architecture."
+                               echo "#undef ARCH_SIXTYFOUR" >> m.h
+                               set 4 4 4 2 8
+                               arch64=false;;
+    x86_64-*-mingw*|riscv64-*-*) inf "Wow! A 64 bit architecture!"
+                                 echo "#define ARCH_SIXTYFOUR" >> m.h
+                                 set 4 4 8 2 8
+                                 arch64=true;;
     *) err "Since datatype sizes cannot be guessed when cross-compiling,\n" \
            "a hardcoded list is used but your architecture isn't known yet.\n" \
            "You need to determine the sizes yourself.\n" \
@@ -963,7 +963,7 @@ case "$arch,$system" in
                   aspp="${TOOLPREF}cc -c";;
   *,freebsd)      as="${TOOLPREF}as"
                   aspp="${TOOLPREF}cc -c";;
-  amd64,*|arm,*|arm64,*|i386,*|power,bsd*|sparc,*)
+  amd64,*|arm,*|arm64,*|i386,*|power,bsd*|sparc,*|riscv,*)
                   as="${TOOLPREF}as"
                   aspp="${TOOLPREF}gcc -c";;
 esac
