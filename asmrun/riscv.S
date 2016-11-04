@@ -217,8 +217,8 @@ caml_raise_exn:
 1:      /* Cut stack at current trap handler */
         mv	sp, TRAP_PTR
         /* Pop previous handler and jump to it */
-        ld	TMP1, 8(sp)
-        ld	TRAP_PTR, 0(sp)
+        load	TMP1, 8(sp)
+        load	TRAP_PTR, 0(sp)
         addi	sp, sp, 16
         jr	TMP1
 2:      /* Preserve exception bucket in callee-save register s2 */
