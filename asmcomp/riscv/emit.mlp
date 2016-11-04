@@ -359,19 +359,13 @@ let emit_instr i =
       | Isigned Clt ->
           `	slt	{emit_reg i.res.(0)}, {emit_reg i.arg.(0)}, {emit_reg i.arg.(1)}\n`
       | Isigned Cge ->
-          let lbl = new_label () in
-          `	bge	{emit_reg i.arg.(0)}, {emit_reg i.arg.(1)}, {emit_label lbl}\n`;
-          `	li	{emit_reg i.res.(0)}, 0\n`;
-          `{emit_label lbl}:\n`;
-          `	li	{emit_reg i.res.(0)}, 1\n`;
+          `	slt	{emit_reg i.res.(0)}, {emit_reg i.arg.(0)}, {emit_reg i.arg.(1)}\n`;
+          `	not	{emit_reg i.res.(0)}, {emit_reg i.res.(0)}\n`;
       | Isigned Cgt ->
           `	slt	{emit_reg i.res.(0)}, {emit_reg i.arg.(1)}, {emit_reg i.arg.(0)}\n`
       | Isigned Cle ->
-          let lbl = new_label () in
-          `	ble	{emit_reg i.arg.(0)}, {emit_reg i.arg.(1)}, {emit_label lbl}\n`;
-          `	li	{emit_reg i.res.(0)}, 0\n`;
-          `{emit_label lbl}:\n`;
-          `	li	{emit_reg i.res.(0)}, 1\n`;
+          `	slt	{emit_reg i.res.(0)}, {emit_reg i.arg.(1)}, {emit_reg i.arg.(0)}\n`;
+          `	not	{emit_reg i.res.(0)}, {emit_reg i.res.(0)}\n`;
       | Isigned Ceq | Iunsigned Ceq ->
           `	xor	{emit_reg i.res.(0)}, {emit_reg i.arg.(0)}, {emit_reg i.arg.(1)}\n`;
           `	seqz	{emit_reg i.res.(0)}, {emit_reg i.res.(0)}\n`
@@ -381,19 +375,13 @@ let emit_instr i =
       | Iunsigned Clt ->
           `	sltu	{emit_reg i.res.(0)}, {emit_reg i.arg.(0)}, {emit_reg i.arg.(1)}\n`
       | Iunsigned Cge ->
-          let lbl = new_label () in
-          `	bgeu	{emit_reg i.arg.(0)}, {emit_reg i.arg.(1)}, {emit_label lbl}\n`;
-          `	li	{emit_reg i.res.(0)}, 0\n`;
-          `{emit_label lbl}:\n`;
-          `	li	{emit_reg i.res.(0)}, 1\n`;
+          `	sltu	{emit_reg i.res.(0)}, {emit_reg i.arg.(0)}, {emit_reg i.arg.(1)}\n`;
+          `	not	{emit_reg i.res.(0)}, {emit_reg i.res.(0)}\n`;
       | Iunsigned Cgt ->
           `	sltu	{emit_reg i.res.(0)}, {emit_reg i.arg.(1)}, {emit_reg i.arg.(0)}\n`
       | Iunsigned Cle ->
-          let lbl = new_label () in
-          `	bleu	{emit_reg i.arg.(0)}, {emit_reg i.arg.(1)}, {emit_label lbl}\n`;
-          `	li	{emit_reg i.res.(0)}, 0\n`;
-          `{emit_label lbl}:\n`;
-          `	li	{emit_reg i.res.(0)}, 1\n`;
+          `	sltu	{emit_reg i.res.(0)}, {emit_reg i.arg.(1)}, {emit_reg i.arg.(0)}\n`;
+          `	not	{emit_reg i.res.(0)}, {emit_reg i.res.(0)}\n`;
       end
   | Lop(Iintop (Icheckbound {label_after_error = label; _})) ->
       let lbl = bound_error_label ?label i.dbg in
