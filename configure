@@ -559,14 +559,14 @@ if test "$?" -eq 0; then
 else
   # For cross-compilation, runtest always fails: add special handling.
   case "$target" in
-    i686-*-mingw*|riscv32-*-*) inf "OK, this is a regular 32 bit architecture."
-                               echo "#undef ARCH_SIXTYFOUR" >> m.h
-                               set 4 4 4 2 8
-                               arch64=false;;
-    x86_64-*-mingw*|riscv64-*-*) inf "Wow! A 64 bit architecture!"
-                                 echo "#define ARCH_SIXTYFOUR" >> m.h
-                                 set 4 4 8 2 8
-                                 arch64=true;;
+    i686-*-mingw*) inf "OK, this is a regular 32 bit architecture."
+                   echo "#undef ARCH_SIXTYFOUR" >> m.h
+                   set 4 4 4 2 8
+                   arch64=false;;
+    x86_64-*-mingw*) inf "Wow! A 64 bit architecture!"
+                     echo "#define ARCH_SIXTYFOUR" >> m.h
+                     set 4 4 8 2 8
+                     arch64=true;;
     *) err "Since datatype sizes cannot be guessed when cross-compiling,\n" \
            "a hardcoded list is used but your architecture isn't known yet.\n" \
            "You need to determine the sizes yourself.\n" \
@@ -888,7 +888,8 @@ case "$target" in
   x86_64-*-mingw*)              arch=amd64; system=mingw;;
   aarch64-*-linux*)             arch=arm64; system=linux;;
   x86_64-*-cygwin*)             arch=amd64; system=cygwin;;
-  riscv*-*-linux*)              arch=riscv; system=linux;;
+  riscv32-*-linux*)             arch=riscv; model=riscv32; system=linux;;
+  riscv64-*-linux*)             arch=riscv; model=riscv64; system=linux;;
 esac
 
 # Some platforms exist both in 32-bit and 64-bit variants, not distinguished

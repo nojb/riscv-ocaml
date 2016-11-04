@@ -14,8 +14,6 @@
 /* Asm part of the runtime system, RISC-V processor, 64-bit mode */
 /* Must be preprocessed by cpp */
 
-#include "../config/m.h"
-
 #define TRAP_PTR s1
 #define ALLOC_PTR s10
 #define ALLOC_LIMIT s11

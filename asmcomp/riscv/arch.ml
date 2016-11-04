@@ -37,7 +37,7 @@ type addressing_mode =
 let big_endian = false
 
 let rv64 =
-  match Config.model with "riscv64" -> true | _ -> false
+  match Config.model with "riscv64" -> true | "riscv32" -> false | _ -> assert false
 
 let size_addr = if rv64 then 8 else 4
 let size_int = size_addr
