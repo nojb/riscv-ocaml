@@ -819,6 +819,7 @@ if test $with_sharedlibs = "yes"; then
     arm*-*-freebsd*)              natdynlink=true;;
     earm*-*-netbsd*)              natdynlink=true;;
     aarch64-*-linux*)             natdynlink=true;;
+    riscv*-*-linux*)              natdynlink=true;;
   esac
 fi
 
