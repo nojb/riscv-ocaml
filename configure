@@ -888,6 +888,7 @@ case "$target" in
   x86_64-*-mingw*)              arch=amd64; system=mingw;;
   aarch64-*-linux*)             arch=arm64; system=linux;;
   x86_64-*-cygwin*)             arch=amd64; system=cygwin;;
+  riscv*-*-linux*)              arch=riscv; system=linux;;
 esac
 
 # Some platforms exist both in 32-bit and 64-bit variants, not distinguished
