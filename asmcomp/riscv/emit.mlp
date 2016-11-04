@@ -243,15 +243,15 @@ let emit_instr i =
       let src = i.arg.(0) and dst = i.res.(0) in
       if src.loc <> dst.loc then begin
         match (src, dst) with
-        | {loc = Reg _; typ = (Int | Addr)}, {loc = Reg _} ->
+        | {loc = Reg _; typ = (Val | Int | Addr)}, {loc = Reg _} ->
             `	mv      {emit_reg dst}, {emit_reg src}\n`
         | {loc = Reg _; typ = Float}, {loc = Reg _; typ = Float} ->
             `	fmv.d   {emit_reg dst}, {emit_reg src}\n`
-        | {loc = Reg _; typ = (Int | Addr)}, {loc = Stack _} ->
+        | {loc = Reg _; typ = (Val | Int | Addr)}, {loc = Stack _} ->
             `	{emit_string stg}	{emit_reg src}, {emit_stack dst}\n`
         | {loc = Reg _; typ = Float}, {loc = Stack _} ->
             `	fsd	{emit_reg src}, {emit_stack dst}\n`
-        | {loc = Stack _; typ = (Int | Addr)}, {loc = Reg _ } ->
+        | {loc = Stack _; typ = (Val | Int | Addr)}, {loc = Reg _ } ->
             `	{emit_string lg}	{emit_reg dst}, {emit_stack src}\n`
         | {loc = Stack _; typ = Float}, {loc = Reg _} ->
             `	fld	{emit_reg dst}, {emit_stack src}\n`
