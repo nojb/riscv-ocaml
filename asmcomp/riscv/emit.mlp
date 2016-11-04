@@ -367,10 +367,10 @@ let emit_instr i =
           `	slt	{emit_reg i.res.(0)}, {emit_reg i.arg.(1)}, {emit_reg i.arg.(0)}\n`;
           `	not	{emit_reg i.res.(0)}, {emit_reg i.res.(0)}\n`;
       | Isigned Ceq | Iunsigned Ceq ->
-          `	xor	{emit_reg i.res.(0)}, {emit_reg i.arg.(0)}, {emit_reg i.arg.(1)}\n`;
+          `	sub	{emit_reg i.res.(0)}, {emit_reg i.arg.(0)}, {emit_reg i.arg.(1)}\n`;
           `	seqz	{emit_reg i.res.(0)}, {emit_reg i.res.(0)}\n`
       | Isigned Cne | Iunsigned Cne ->
-          `	xor	{emit_reg i.res.(0)}, {emit_reg i.arg.(0)}, {emit_reg i.arg.(1)}\n`;
+          `	sub	{emit_reg i.res.(0)}, {emit_reg i.arg.(0)}, {emit_reg i.arg.(1)}\n`;
           `	snez	{emit_reg i.res.(0)}, {emit_reg i.res.(0)}\n`
       | Iunsigned Clt ->
           `	sltu	{emit_reg i.res.(0)}, {emit_reg i.arg.(0)}, {emit_reg i.arg.(1)}\n`
