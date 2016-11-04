@@ -14,6 +14,8 @@
 /* Asm part of the runtime system, RISC-V processor, 64-bit mode */
 /* Must be preprocessed by cpp */
 
+#include "../config/m.h"
+
 #define TRAP_PTR s1
 #define ALLOC_PTR s10
 #define ALLOC_LIMIT s11
@@ -21,24 +23,35 @@
 #define TMP1 t1
 #define ARG t2
 
-#ifdef MODEL_riscv64
-#define STORE sd
-#define LOAD ld
+#if defined(MODEL_riscv64)
+#define store sd
+#define load ld
+#define WSZ 8
 #else
-#define STORE sw
-#define LOAD lw
+#define store sw
+#define load lw
+#define WSZ 4
 #endif
 
-#define LOADGLOBAL(reg,symb,tmp) \
+#if defined(__PIC__)
+        .option pic
+#define LOADGLOBAL(reg, symb) \
+	la	reg, symb; \
+	load	reg, 0(reg)
+#define STOREGLOBAL(reg, symb, tmp) \
 	la	tmp, symb; \
-	LOAD	reg, 0(tmp)
-
-#define STOREGLOBAL(reg,symb,tmp) \
-	la	tmp, symb; \
-	STORE	reg, 0(tmp)
+	store	reg, 0(tmp)
+#else
+        .option nopic
+#define LOADGLOBAL(reg, symb) \
+        load    reg, %hi(symb); \
+        load    reg, %lo(symb)(reg)
+#define STOREGLOBAL(reg, symb, tmp) \
+        load    tmp, %hi(symb); \
+        store   reg, %lo(symb)(tmp)
+#endif
 
 	.section	.text
-
 /* Invoke the garbage collector. */
 
 	.globl	caml_system__code_begin
@@ -59,31 +72,31 @@ caml_call_gc:
         /* + 1 for alignment */
         addi	sp, sp, -0x160
         mv	s0, sp
-        STORE	ra, 0x8(sp)
-        STORE	s0, 0x0(sp)
+        store	ra, 0x8(sp)
+        store	s0, 0x0(sp)
         /* Save allocatable integer registers on the stack,
            in the order given in proc.ml */
-        STORE	a0, 0x10(sp)
-        STORE	a1, 0x18(sp)
-        STORE	a2, 0x20(sp)
-        STORE	a3, 0x28(sp)
-        STORE	a4, 0x30(sp)
-        STORE	a5, 0x38(sp)
-        STORE	a6, 0x40(sp)
-        STORE	a7, 0x48(sp)
-        STORE	s2, 0x50(sp)
-        STORE	s3, 0x58(sp)
-        STORE	s4, 0x60(sp)
-        STORE	s5, 0x68(sp)
-        STORE	s6, 0x70(sp)
-        STORE	s7, 0x78(sp)
-        STORE	s8, 0x80(sp)
-        STORE	s9, 0x88(sp)
-        STORE	t2, 0x90(sp)
-        STORE	t3, 0x98(sp)
-        STORE	t4, 0xa0(sp)
-        STORE	t5, 0xa8(sp)
-        STORE	t6, 0xb0(sp)
+        store	a0, 0x10(sp)
+        store	a1, 0x18(sp)
+        store	a2, 0x20(sp)
+        store	a3, 0x28(sp)
+        store	a4, 0x30(sp)
+        store	a5, 0x38(sp)
+        store	a6, 0x40(sp)
+        store	a7, 0x48(sp)
+        store	s2, 0x50(sp)
+        store	s3, 0x58(sp)
+        store	s4, 0x60(sp)
+        store	s5, 0x68(sp)
+        store	s6, 0x70(sp)
+        store	s7, 0x78(sp)
+        store	s8, 0x80(sp)
+        store	s9, 0x88(sp)
+        store	t2, 0x90(sp)
+        store	t3, 0x98(sp)
+        store	t4, 0xa0(sp)
+        store	t5, 0xa8(sp)
+        store	t6, 0xb0(sp)
         /* Save caller-save floating-point registers on the stack
            (callee-saves are preserved by caml_garbage_collection) */
         fsd	ft0, 0xb8(sp)
@@ -117,27 +130,27 @@ caml_call_gc:
         /* Call the garbage collector */
         call	caml_garbage_collection
         /* Restore registers */
-        LOAD	a0, 0x10(sp)
-        LOAD	a1, 0x18(sp)
-        LOAD	a2, 0x20(sp)
-        LOAD	a3, 0x28(sp)
-        LOAD	a4, 0x30(sp)
-        LOAD	a5, 0x38(sp)
-        LOAD	a6, 0x40(sp)
-        LOAD	a7, 0x48(sp)
-        LOAD	s2, 0x50(sp)
-        LOAD	s3, 0x58(sp)
-        LOAD	s4, 0x60(sp)
-        LOAD	s5, 0x68(sp)
-        LOAD	s6, 0x70(sp)
-        LOAD	s7, 0x78(sp)
-        LOAD	s8, 0x80(sp)
-        LOAD	s9, 0x88(sp)
-        LOAD	t2, 0x90(sp)
-        LOAD	t3, 0x98(sp)
-        LOAD	t4, 0xa0(sp)
-        LOAD	t5, 0xa8(sp)
-        LOAD	t6, 0xb0(sp)
+        load	a0, 0x10(sp)
+        load	a1, 0x18(sp)
+        load	a2, 0x20(sp)
+        load	a3, 0x28(sp)
+        load	a4, 0x30(sp)
+        load	a5, 0x38(sp)
+        load	a6, 0x40(sp)
+        load	a7, 0x48(sp)
+        load	s2, 0x50(sp)
+        load	s3, 0x58(sp)
+        load	s4, 0x60(sp)
+        load	s5, 0x68(sp)
+        load	s6, 0x70(sp)
+        load	s7, 0x78(sp)
+        load	s8, 0x80(sp)
+        load	s9, 0x88(sp)
+        load	t2, 0x90(sp)
+        load	t3, 0x98(sp)
+        load	t4, 0xa0(sp)
+        load	t5, 0xa8(sp)
+        load	t6, 0xb0(sp)
         fld	ft0, 0xb8(sp)
         fld	ft1, 0xc0(sp)
         fld	ft2, 0xc8(sp)
@@ -163,8 +176,8 @@ caml_call_gc:
         LOADGLOBAL(ALLOC_PTR, caml_young_ptr, TMP0)
         LOADGLOBAL(ALLOC_LIMIT, caml_young_limit, TMP0)
         /* Free stack space and return to caller */
-        LOAD	ra, 0x8(sp)
-        LOAD	s0, 0x0(sp)
+        load	ra, 0x8(sp)
+        load	s0, 0x0(sp)
         addi	sp, sp, 0x160
         ret
         .size	caml_call_gc, .-caml_call_gc
@@ -266,18 +279,18 @@ caml_start_program:
 	/* Set up stack frame and save callee-save registers */
 	addi	sp, sp, -0xd0
 	STORE	ra, 0xc0(sp)
-	STORE	s0, 0x0(sp)
-	STORE	s1, 0x8(sp)
-	STORE	s2, 0x10(sp)
-	STORE	s3, 0x18(sp)
-	STORE	s4, 0x20(sp)
-	STORE	s5, 0x28(sp)
-	STORE	s6, 0x30(sp)
-	STORE	s7, 0x38(sp)
-	STORE	s8, 0x40(sp)
-	STORE	s9, 0x48(sp)
-	STORE	s10, 0x50(sp)
-	STORE	s11, 0x58(sp)
+	store	s0, 0x0(sp)
+	store	s1, 0x8(sp)
+	store	s2, 0x10(sp)
+	store	s3, 0x18(sp)
+	store	s4, 0x20(sp)
+	store	s5, 0x28(sp)
+	store	s6, 0x30(sp)
+	store	s7, 0x38(sp)
+	store	s8, 0x40(sp)
+	store	s9, 0x48(sp)
+	store	s10, 0x50(sp)
+	store	s11, 0x58(sp)
 	fsd	fs0, 0x60(sp)
 	fsd	fs1, 0x68(sp)
 	fsd	fs2, 0x70(sp)
@@ -293,50 +306,50 @@ caml_start_program:
 	addi	sp, sp, -32
         /* Setup a callback link on the stack */
 	LOADGLOBAL(a0, caml_bottom_of_stack, TMP0)
-	STORE	a0, 0(sp)
+	store	a0, 0(sp)
 	LOADGLOBAL(a1, caml_last_return_address, TMP0)
-	STORE	a1, 8(sp)
+	store	a1, 8(sp)
 	LOADGLOBAL(a2, caml_gc_regs, TMP0)
-	STORE	a2, 16(sp)
+	store	a2, 16(sp)
 	/* set up a trap frame */
 	addi	sp, sp, -16
 	LOADGLOBAL(TMP1, caml_exception_pointer, TMP0)
-	STORE	TMP1, 0(sp)
+	store	TMP1, 0(sp)
 	lla	TMP0, .Ltrap_handler
-	STORE	TMP0, 8(sp)
+	store	TMP0, 8(sp)
 	mv	TRAP_PTR, sp
 	LOADGLOBAL(ALLOC_PTR, caml_young_ptr, TMP0)
 	LOADGLOBAL(ALLOC_LIMIT, caml_young_limit, TMP0)
 	STOREGLOBAL(x0, caml_last_return_address, TMP0)
 	jalr	ARG
 .Lcaml_retaddr:	/* pop trap frame, restoring caml_exception_pointer */
-	LOAD	TMP1, 0(sp)
+	load	TMP1, 0(sp)
 	STOREGLOBAL(TMP1, caml_exception_pointer, TMP0)
 	addi	sp, sp, 16
 .Lreturn_result:	/* pop callback link, restoring global variables */
-	LOAD	TMP1, 0(sp)
+	load	TMP1, 0(sp)
 	STOREGLOBAL(TMP1, caml_bottom_of_stack, TMP0)
-	LOAD	TMP1, 8(sp)
+	load	TMP1, 8(sp)
 	STOREGLOBAL(TMP1, caml_last_return_address, TMP0)
-	LOAD	TMP1, 16(sp)
+	load	TMP1, 16(sp)
 	STOREGLOBAL(TMP1, caml_gc_regs, TMP0)
 	addi	sp, sp, 32
 	/* Update allocation pointer */
 	STOREGLOBAL(ALLOC_PTR, caml_young_ptr, TMP0)
 	/* reload callee-save registers and return */
-	LOAD	ra, 0xc0(sp)
-	LOAD	s0, 0x0(sp)
-	LOAD	s1, 0x8(sp)
-	LOAD	s2, 0x10(sp)
-	LOAD	s3, 0x18(sp)
-	LOAD	s4, 0x20(sp)
-	LOAD	s5, 0x28(sp)
-	LOAD	s6, 0x30(sp)
-	LOAD	s7, 0x38(sp)
-	LOAD	s8, 0x40(sp)
-	LOAD	s9, 0x48(sp)
-	LOAD	s10, 0x50(sp)
-	LOAD	s11, 0x58(sp)
+	load	ra, 0xc0(sp)
+	load	s0, 0x0(sp)
+	load	s1, 0x8(sp)
+	load	s2, 0x10(sp)
+	load	s3, 0x18(sp)
+	load	s4, 0x20(sp)
+	load	s5, 0x28(sp)
+	load	s6, 0x30(sp)
+	load	s7, 0x38(sp)
+	load	s8, 0x40(sp)
+	load	s9, 0x48(sp)
+	load	s10, 0x50(sp)
+	load	s11, 0x58(sp)
 	fld	fs0, 0x60(sp)
 	fld	fs1, 0x68(sp)
 	fld	fs2, 0x70(sp)
@@ -367,7 +380,7 @@ caml_callback_exn:
         mv	TMP1, a0
         mv	a0, a1		/* a0 = first arg */
         mv	a1, TMP1	/* a1 = closure environment */
-        LOAD	ARG, 0(TMP1)	/* code pointer */
+        load	ARG, 0(TMP1)	/* code pointer */
         j	.Ljump_to_caml
         .size	caml_callback_exn, .-caml_callback_exn
 
