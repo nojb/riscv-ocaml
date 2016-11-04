@@ -35,21 +35,16 @@
 
 #if defined(__PIC__)
         .option pic
+#else
+        .option nopic
+#endif
+
 #define LOADGLOBAL(reg, symb) \
 	la	reg, symb; \
 	load	reg, 0(reg)
 #define STOREGLOBAL(reg, symb, tmp) \
 	la	tmp, symb; \
 	store	reg, 0(tmp)
-#else
-        .option nopic
-#define LOADGLOBAL(reg, symb) \
-        load    reg, %hi(symb); \
-        load    reg, %lo(symb)(reg)
-#define STOREGLOBAL(reg, symb, tmp) \
-        load    tmp, %hi(symb); \
-        store   reg, %lo(symb)(tmp)
-#endif
 
 	.section	.text
 /* Invoke the garbage collector. */
@@ -65,7 +60,7 @@ caml_call_gc:
         STOREGLOBAL(ra, caml_last_return_address, TMP0)
         /* Record lowest stack address */
         mv	TMP1, sp
-        STOREGLOBAL(TMP1, caml_bottom_of_stack, TMP0)
+        STOREGLOBAL(sp, caml_bottom_of_stack, TMP0)
 .Lcaml_call_gc:
 	/* Set up stack space, saving return address */
         /* (1 reg for RA, 1 reg for FP, 21 allocatable int regs, 20 caller-save float regs) * 8 */
