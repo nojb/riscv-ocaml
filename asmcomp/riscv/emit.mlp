@@ -300,7 +300,7 @@ let emit_instr i =
         | Thirtytwo_unsigned -> if rv64 then "lwu" else "lw"
         | Thirtytwo_signed -> "lw"
         | Word_int | Word_val -> lg
-        | Single -> "flw"
+        | Single -> assert false
         | Double | Double_u -> "fld"
       in
       `	{emit_string instr}	{emit_reg i.res.(0)}, {emit_int ofs}({emit_reg i.arg.(0)})\n`
@@ -316,7 +316,7 @@ let emit_instr i =
         | Sixteen_unsigned | Sixteen_signed -> "sh"
         | Thirtytwo_unsigned | Thirtytwo_signed -> "sw"
         | Word_int | Word_val -> stg
-        | Single -> "fsw"
+        | Single -> assert false
         | Double | Double_u -> "fsd"
       in
       `	{emit_string instr}	{emit_reg i.arg.(0)}, {emit_int ofs}({emit_reg i.arg.(1)})\n`
@@ -423,7 +423,7 @@ let emit_instr i =
           `	{emit_string name}	{emit_reg i.arg.(0)}, {emit_reg i.arg.(1)}, {emit_label lbl}\n`
       | Iinttest_imm _ ->
           fatal_error "Emit.emit_instr (Iinttest_imm _)"
-      | Ifloattest(cmp, neg) -> (* FIXME NaNs *)
+      | Ifloattest(cmp, neg) ->
           let neg = match cmp with
             | Ceq -> `	feq.d	{emit_reg reg_tmp1}, {emit_reg i.arg.(0)}, {emit_reg i.arg.(1)}\n`; neg
             | Cne -> `	feq.d	{emit_reg reg_tmp1}, {emit_reg i.arg.(0)}, {emit_reg i.arg.(1)}\n`; not neg
