@@ -34,6 +34,7 @@ IA32 (Pentium)::     NetBSD, OpenBSD, Solaris 9
 PowerPC::            NetBSD
 ARM::                NetBSD
 SPARC::              Solaris, Linux, NetBSD
+RISC-V::             Linux
 
 Other operating systems for the processors above have not been tested, but
 the compiler may work under other operating systems with little work.
