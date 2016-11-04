@@ -360,12 +360,12 @@ let emit_instr i =
           `	slt	{emit_reg i.res.(0)}, {emit_reg i.arg.(0)}, {emit_reg i.arg.(1)}\n`
       | Isigned Cge ->
           `	slt	{emit_reg i.res.(0)}, {emit_reg i.arg.(0)}, {emit_reg i.arg.(1)}\n`;
-          `	not	{emit_reg i.res.(0)}, {emit_reg i.res.(0)}\n`;
+          `	xori	{emit_reg i.res.(0)}, {emit_reg i.res.(0)}, 1\n`;
       | Isigned Cgt ->
           `	slt	{emit_reg i.res.(0)}, {emit_reg i.arg.(1)}, {emit_reg i.arg.(0)}\n`
       | Isigned Cle ->
           `	slt	{emit_reg i.res.(0)}, {emit_reg i.arg.(1)}, {emit_reg i.arg.(0)}\n`;
-          `	not	{emit_reg i.res.(0)}, {emit_reg i.res.(0)}\n`;
+          `	xori	{emit_reg i.res.(0)}, {emit_reg i.res.(0)}, 1\n`;
       | Isigned Ceq | Iunsigned Ceq ->
           `	sub	{emit_reg i.res.(0)}, {emit_reg i.arg.(0)}, {emit_reg i.arg.(1)}\n`;
           `	seqz	{emit_reg i.res.(0)}, {emit_reg i.res.(0)}\n`
@@ -376,12 +376,12 @@ let emit_instr i =
           `	sltu	{emit_reg i.res.(0)}, {emit_reg i.arg.(0)}, {emit_reg i.arg.(1)}\n`
       | Iunsigned Cge ->
           `	sltu	{emit_reg i.res.(0)}, {emit_reg i.arg.(0)}, {emit_reg i.arg.(1)}\n`;
-          `	not	{emit_reg i.res.(0)}, {emit_reg i.res.(0)}\n`;
+          `	xori	{emit_reg i.res.(0)}, {emit_reg i.res.(0)}, 1\n`;
       | Iunsigned Cgt ->
           `	sltu	{emit_reg i.res.(0)}, {emit_reg i.arg.(1)}, {emit_reg i.arg.(0)}\n`
       | Iunsigned Cle ->
           `	sltu	{emit_reg i.res.(0)}, {emit_reg i.arg.(1)}, {emit_reg i.arg.(0)}\n`;
-          `	not	{emit_reg i.res.(0)}, {emit_reg i.res.(0)}\n`;
+          `	xori	{emit_reg i.res.(0)}, {emit_reg i.res.(0)}, 1\n`;
       end
   | Lop(Iintop (Icheckbound {label_after_error = label; _})) ->
       let lbl = bound_error_label ?label i.dbg in
