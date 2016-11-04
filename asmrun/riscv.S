@@ -173,8 +173,8 @@ caml_call_gc:
         fld	ft10, 0x150(sp)
         fld	ft11, 0x158(sp)
         /* Reload new allocation pointer and allocation limit */
-        LOADGLOBAL(ALLOC_PTR, caml_young_ptr, TMP0)
-        LOADGLOBAL(ALLOC_LIMIT, caml_young_limit, TMP0)
+        LOADGLOBAL(ALLOC_PTR, caml_young_ptr)
+        LOADGLOBAL(ALLOC_LIMIT, caml_young_limit)
         /* Free stack space and return to caller */
         load	ra, 0x8(sp)
         load	s0, 0x0(sp)
@@ -201,8 +201,8 @@ caml_c_call:
         /* Call the function */
         jalr	ARG
         /* Reload alloc ptr and alloc limit */
-        LOADGLOBAL(ALLOC_PTR, caml_young_ptr, TMP0)
-        LOADGLOBAL(TRAP_PTR, caml_exception_pointer, TMP0)
+        LOADGLOBAL(ALLOC_PTR, caml_young_ptr)
+        LOADGLOBAL(TRAP_PTR, caml_exception_pointer)
         /* Return */
         jr	s2
         .size	caml_c_call, .-caml_c_call
@@ -213,7 +213,7 @@ caml_c_call:
 	.type	caml_raise_exn, @function
 caml_raise_exn:
         /* Test if backtrace is active */
-        LOADGLOBAL(TMP1, caml_backtrace_active, TMP0)
+        LOADGLOBAL(TMP1, caml_backtrace_active)
         bnez	TMP1, 2f
 1:      /* Cut stack at current trap handler */
         mv	sp, TRAP_PTR
@@ -243,10 +243,10 @@ caml_raise_exn:
 	.globl	caml_raise_exception
 	.type	caml_raise_exception, @function
 caml_raise_exception:
-	LOADGLOBAL(TRAP_PTR, caml_exception_pointer, TMP0)
-        LOADGLOBAL(ALLOC_PTR, caml_young_ptr, TMP0)
-        LOADGLOBAL(ALLOC_LIMIT, caml_young_limit, TMP0)
-        LOADGLOBAL(TMP1, caml_backtrace_active, TMP0)
+	LOADGLOBAL(TRAP_PTR, caml_exception_pointer)
+        LOADGLOBAL(ALLOC_PTR, caml_young_ptr)
+        LOADGLOBAL(ALLOC_LIMIT, caml_young_limit)
+        LOADGLOBAL(TMP1, caml_backtrace_active)
         bnez	TMP1, 2f
 1:      /* Cut stack at current trap handler */
         mv	sp, TRAP_PTR
@@ -256,8 +256,8 @@ caml_raise_exception:
         jr	TMP1
 2:      /* Preserve exception bucket in callee-save register s2 */
         mv	s2, a0
-        LOADGLOBAL(a1, caml_last_return_address, TMP0)
-        LOADGLOBAL(a2, caml_bottom_of_stack, TMP0)
+        LOADGLOBAL(a1, caml_last_return_address)
+        LOADGLOBAL(a2, caml_bottom_of_stack)
         mv	a3, TRAP_PTR
         call	caml_stash_backtrace
         mv	a0, s2
@@ -305,21 +305,21 @@ caml_start_program:
 	fsd	fs11, 0xb8(sp)
 	addi	sp, sp, -32
         /* Setup a callback link on the stack */
-	LOADGLOBAL(a0, caml_bottom_of_stack, TMP0)
+	LOADGLOBAL(a0, caml_bottom_of_stack)
 	store	a0, 0(sp)
-	LOADGLOBAL(a1, caml_last_return_address, TMP0)
+	LOADGLOBAL(a1, caml_last_return_address)
 	store	a1, 8(sp)
-	LOADGLOBAL(a2, caml_gc_regs, TMP0)
+	LOADGLOBAL(a2, caml_gc_regs)
 	store	a2, 16(sp)
 	/* set up a trap frame */
 	addi	sp, sp, -16
-	LOADGLOBAL(TMP1, caml_exception_pointer, TMP0)
+	LOADGLOBAL(TMP1, caml_exception_pointer)
 	store	TMP1, 0(sp)
 	lla	TMP0, .Ltrap_handler
 	store	TMP0, 8(sp)
 	mv	TRAP_PTR, sp
-	LOADGLOBAL(ALLOC_PTR, caml_young_ptr, TMP0)
-	LOADGLOBAL(ALLOC_LIMIT, caml_young_limit, TMP0)
+	LOADGLOBAL(ALLOC_PTR, caml_young_ptr)
+	LOADGLOBAL(ALLOC_LIMIT, caml_young_limit)
 	STOREGLOBAL(x0, caml_last_return_address, TMP0)
 	jalr	ARG
 .Lcaml_retaddr:	/* pop trap frame, restoring caml_exception_pointer */
