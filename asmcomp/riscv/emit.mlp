@@ -336,8 +336,7 @@ let emit_instr i =
         match chunk with
         | Byte_unsigned | Byte_signed -> "sb"
         | Sixteen_unsigned | Sixteen_signed -> "sh"
-        | Thirtytwo_unsigned -> if rv64 then "swu" else "sw"
-        | Thirtytwo_signed -> "sw"
+        | Thirtytwo_unsigned | Thirtytwo_signed -> "sw"
         | Word_int | Word_val -> stg
         | Single -> "fsw"
         | Double | Double_u -> "fsd" in
@@ -397,9 +396,6 @@ let emit_instr i =
       let lbl = bound_error_label ?label i.dbg in
       `	li	{emit_reg reg_tmp1}, {emit_int n}\n`;
       `	bleu	{emit_reg i.arg.(0)}, {emit_reg reg_tmp1}, {emit_label lbl}\n`
-  | Lop(Iintop_imm(Imul, n)) ->
-      `	li	{emit_reg i.res.(0)}, {emit_int n}\n`;
-      `	mul	{emit_reg i.res.(0)}, {emit_reg i.res.(0)}, {emit_reg i.arg.(0)}\n`
   | Lop(Iintop_imm(op, n)) ->
       let instr = name_for_intop_imm op in
       `	{emit_string instr}	{emit_reg i.res.(0)}, {emit_reg i.arg.(0)}, {emit_int n}\n`

@@ -54,6 +54,7 @@ method! select_operation op args dbg =
   (* RISC-V does not support immediate operands for comparison operators *)
   | (Ccmpi comp, args) -> (Iintop(Icomp (Isigned comp)), args)
   | (Ccmpa comp, args) -> (Iintop(Icomp (Iunsigned comp)), args)
+  | (Cmuli, _) -> (Iintop Imul, args)
   | _ ->
       super#select_operation op args dbg
 
