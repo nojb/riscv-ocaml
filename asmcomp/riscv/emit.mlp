@@ -49,13 +49,10 @@ let emit_symbol s =
 
 (* Output a label *)
 
-let label_prefix = ".L"
+let label_prefix = "L"
 
 let emit_label lbl =
   emit_string label_prefix; emit_int lbl
-
-let _emit_data_label lbl =
-  emit_string label_prefix; emit_string "d"; emit_int lbl
 
 (* Section switching *)
 
@@ -95,26 +92,6 @@ let emit_stack r =
     Stack s ->
       let ofs = slot_offset s (register_class r) in `{emit_int ofs}(sp)`
   | _ -> fatal_error "Emit.emit_stack"
-
-let _is_immediate n =
-  n <= 0x7FF && n >= -0x800
-
-let _is_native_immediate n =
-  n <= 0x7FFn && n >= -0x800n
-
-(* Output a load *)
-
-let emit_load instr addr arg dst =
-  match addr with
-  | Iindexed ofs ->
-      `	{emit_string instr}	{emit_reg dst}, {emit_int ofs}({emit_reg arg.(0)})\n`
-
-(* Output a store *)
-
-let emit_store instr addr arg src =
-  match addr with
-  | Iindexed ofs ->
-      `	{emit_string instr}	{emit_reg src}, {emit_int ofs}({emit_reg arg.(1)})\n`
 
 (* Record live pointers at call points *)
 
@@ -271,16 +248,9 @@ let emit_instr i =
   | Lop(Iconst_int n) ->
       `	li	{emit_reg i.res.(0)}, {emit_nativeint n}\n`
   | Lop(Iconst_float f) ->
-      if rv64 then begin
-        let n = Int64.to_nativeint f in
-        `	li	{emit_reg reg_tmp1}, {emit_nativeint n}\n`;
-        `	fmv.d.x	{emit_reg i.res.(0)}, {emit_reg reg_tmp1}\n`
-      end else begin
-        let lbl = new_label() in
-        float_literals := (f, lbl) :: !float_literals;
-        `1:	auipc	{emit_reg reg_tmp1}, %pcrel_hi({emit_label lbl})\n`;
-        `	fld	{emit_reg i.res.(0)}, %pcrel_lo(1b)({emit_reg reg_tmp1})\n`
-      end
+      let lbl = new_label() in
+      float_literals := (f, lbl) :: !float_literals;
+      `	fld	{emit_reg i.res.(0)}, {emit_label lbl}, {emit_reg reg_tmp1}\n`
   | Lop(Iconst_symbol s) ->
       `	la	{emit_reg i.res.(0)}, {emit_symbol s}\n`
   | Lop(Icall_ind {label_after = label}) ->
@@ -317,8 +287,11 @@ let emit_instr i =
       assert (n mod 16 = 0);
       `	addi	sp, sp, {emit_int (-n)}\n`;
       stack_offset := !stack_offset + n
-  | Lop(Iload(chunk, addr)) ->
-      let loadinstr =
+  | Lop(Iload(Single, Iindexed ofs)) ->
+      `	flw	{emit_reg i.res.(0)}, {emit_int ofs}({emit_reg i.arg.(0)})\n`;
+      `	fcvt.d.s	{emit_reg i.res.(0)}, {emit_reg i.res.(0)}\n`
+  | Lop(Iload(chunk, Iindexed ofs)) ->
+      let instr =
         match chunk with
         | Byte_unsigned -> "lbu"
         | Byte_signed -> "lb"
@@ -330,17 +303,23 @@ let emit_instr i =
         | Single -> "flw"
         | Double | Double_u -> "fld"
       in
-      emit_load loadinstr addr i.arg i.res.(0)
-  | Lop(Istore(chunk, addr, _)) ->
-      let storeinstr =
+      `	{emit_string instr}	{emit_reg i.res.(0)}, {emit_int ofs}({emit_reg i.arg.(0)})\n`
+  | Lop(Istore(Single, Iindexed ofs, _)) ->
+      `	fmv.x.d	{emit_reg reg_tmp1}, {emit_reg i.arg.(0)}\n`;
+      `	fcvt.s.d	{emit_reg i.arg.(0)}, {emit_reg i.arg.(0)}\n`;
+      `	fsw	{emit_reg i.arg.(0)}, {emit_int ofs}({emit_reg i.arg.(1)})\n`;
+      `	fmv.d.x	{emit_reg i.arg.(0)}, {emit_reg reg_tmp1}\n`
+  | Lop(Istore(chunk, Iindexed ofs, _)) ->
+      let instr =
         match chunk with
         | Byte_unsigned | Byte_signed -> "sb"
         | Sixteen_unsigned | Sixteen_signed -> "sh"
         | Thirtytwo_unsigned | Thirtytwo_signed -> "sw"
         | Word_int | Word_val -> stg
         | Single -> "fsw"
-        | Double | Double_u -> "fsd" in
-      emit_store storeinstr addr i.arg i.arg.(0)
+        | Double | Double_u -> "fsd"
+      in
+      `	{emit_string instr}	{emit_reg i.arg.(0)}, {emit_int ofs}({emit_reg i.arg.(1)})\n`
   | Lop(Ialloc {words = n; label_after_call_gc = label; _}) ->
       let lbl_frame_lbl = record_frame_label ?label i.live false i.dbg in
       let lbl_redo = new_label () in
