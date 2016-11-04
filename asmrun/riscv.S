@@ -37,13 +37,6 @@
         .option nopic
 #endif
 
-#define LOADGLOBAL(reg, symb) \
-	la	reg, symb; \
-	load	reg, 0(reg)
-#define STOREGLOBAL(reg, symb, tmp) \
-	la	tmp, symb; \
-	store	reg, 0(tmp)
-
 	.section	.text
 /* Invoke the garbage collector. */
 
@@ -55,10 +48,10 @@ caml_system__code_begin:
         .type	caml_call_gc, @function
 caml_call_gc:
         /* Record return address */
-        STOREGLOBAL(ra, caml_last_return_address, TMP0)
+        store	ra, caml_last_return_address, TMP0
         /* Record lowest stack address */
         mv	TMP1, sp
-        STOREGLOBAL(sp, caml_bottom_of_stack, TMP0)
+        store	sp, caml_bottom_of_stack, TMP0
 .Lcaml_call_gc:
 	/* Set up stack space, saving return address */
         /* (1 reg for RA, 1 reg for FP, 21 allocatable int regs, 20 caller-save float regs) * 8 */
@@ -115,11 +108,11 @@ caml_call_gc:
         fsd	ft11, 0x158(sp)
         /* Store pointer to saved integer registers in caml_gc_regs */
         addi	TMP1, sp, 16
-        STOREGLOBAL(TMP1, caml_gc_regs, TMP0)
+        store	TMP1, caml_gc_regs, TMP0
         /* Save current allocation pointer for debugging purposes */
-        STOREGLOBAL(ALLOC_PTR, caml_young_ptr, TMP0)
+        store	ALLOC_PTR, caml_young_ptr, TMP0
         /* Save trap pointer in case an exception is raised during GC */
-        STOREGLOBAL(TRAP_PTR, caml_exception_pointer, TMP0)
+        store	TRAP_PTR, caml_exception_pointer, TMP0
         /* Call the garbage collector */
         call	caml_garbage_collection
         /* Restore registers */
@@ -185,16 +178,16 @@ caml_c_call:
         /* Preserve return address in callee-save register s2 */
         mv	s2, ra
         /* Record lowest stack address and return address */
-        STOREGLOBAL(ra, caml_last_return_address, TMP0)
-        STOREGLOBAL(sp, caml_bottom_of_stack, TMP0)
+        store	ra, caml_last_return_address, TMP0
+        store	sp, caml_bottom_of_stack, TMP0
         /* Make the exception handler alloc ptr available to the C code */
-        STOREGLOBAL(ALLOC_PTR, caml_young_ptr, TMP0)
-        STOREGLOBAL(TRAP_PTR, caml_exception_pointer, TMP0)
+        store	ALLOC_PTR, caml_young_ptr, TMP0
+        store	TRAP_PTR, caml_exception_pointer, TMP0
         /* Call the function */
         jalr	ARG
         /* Reload alloc ptr and alloc limit */
-        LOADGLOBAL(ALLOC_PTR, caml_young_ptr)
-        LOADGLOBAL(TRAP_PTR, caml_exception_pointer)
+        load	ALLOC_PTR, caml_young_ptr
+        load	TRAP_PTR, caml_exception_pointer
         /* Return */
         jr	s2
         .size	caml_c_call, .-caml_c_call
@@ -297,37 +290,37 @@ caml_start_program:
 	fsd	fs11, 0xb8(sp)
 	addi	sp, sp, -32
         /* Setup a callback link on the stack */
-	LOADGLOBAL(TMP1, caml_bottom_of_stack)
+	load	TMP1, caml_bottom_of_stack
 	store	TMP1, 0(sp)
-	LOADGLOBAL(TMP1, caml_last_return_address)
+	load	TMP1, caml_last_return_address
 	store	TMP1, 8(sp)
-	LOADGLOBAL(TMP1, caml_gc_regs)
+	load	TMP1, caml_gc_regs
 	store	TMP1, 16(sp)
 	/* set up a trap frame */
 	addi	sp, sp, -16
-	LOADGLOBAL(TMP1, caml_exception_pointer)
+	load	TMP1, caml_exception_pointer
 	store	TMP1, 0(sp)
 	lla	TMP0, .Ltrap_handler
 	store	TMP0, 8(sp)
 	mv	TRAP_PTR, sp
-	LOADGLOBAL(ALLOC_PTR, caml_young_ptr)
-	LOADGLOBAL(ALLOC_LIMIT, caml_young_limit)
-	STOREGLOBAL(x0, caml_last_return_address, TMP0)
+	load	ALLOC_PTR, caml_young_ptr
+	load	ALLOC_LIMIT, caml_young_limit
+	store	x0, caml_last_return_address, TMP0
 	jalr	ARG
 .Lcaml_retaddr:	/* pop trap frame, restoring caml_exception_pointer */
 	load	TMP1, 0(sp)
-	STOREGLOBAL(TMP1, caml_exception_pointer, TMP0)
+	store	TMP1, caml_exception_pointer, TMP0
 	addi	sp, sp, 16
 .Lreturn_result:	/* pop callback link, restoring global variables */
 	load	TMP1, 0(sp)
-	STOREGLOBAL(TMP1, caml_bottom_of_stack, TMP0)
+	store	TMP1, caml_bottom_of_stack, TMP0
 	load	TMP1, 8(sp)
-	STOREGLOBAL(TMP1, caml_last_return_address, TMP0)
+	store	TMP1, caml_last_return_address, TMP0
 	load	TMP1, 16(sp)
-	STOREGLOBAL(TMP1, caml_gc_regs, TMP0)
+	store	TMP1, caml_gc_regs, TMP0
 	addi	sp, sp, 32
 	/* Update allocation pointer */
-	STOREGLOBAL(ALLOC_PTR, caml_young_ptr, TMP0)
+	store	ALLOC_PTR, caml_young_ptr, TMP0
 	/* reload callee-save registers and return */
 	load	ra, 0xc0(sp)
 	load	s0, 0x0(sp)
@@ -357,7 +350,7 @@ caml_start_program:
 	addi	sp, sp, 0xd0
 	ret
 .Ltrap_handler:
-	STOREGLOBAL(TRAP_PTR, caml_exception_pointer, TMP0)
+	store	TRAP_PTR, caml_exception_pointer, TMP0
 	ori	a0, a0, 2
 	j	.Lreturn_result
 	.size	caml_start_program, .-caml_start_program

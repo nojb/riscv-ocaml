@@ -343,7 +343,7 @@ let emit_instr i =
         | Double | Double_u -> "fsd" in
       emit_store storeinstr addr i.arg i.arg.(0)
   | Lop(Ialloc {words = n; label_after_call_gc = label; _}) ->
-      let lbl_frame_lbl = record_frame_label ~label i.live false i.dbg in
+      let lbl_frame_lbl = record_frame_label ?label i.live false i.dbg in
       let lbl_redo = new_label () in
       let lbl_call_gc = new_label () in
       `{emit_label lbl_redo}:\n`;
