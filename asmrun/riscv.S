@@ -187,7 +187,7 @@ caml_c_call:
         jalr    ARG
         /* Reload alloc ptr and alloc limit */
         load    ALLOC_PTR, caml_young_ptr
-        load    TRAP_PTR, caml_exception_pointer
+        load    ALLOC_LIMIT, caml_young_limit
         /* Return */
         jr      s2
         .size   caml_c_call, .-caml_c_call
